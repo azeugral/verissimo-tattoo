@@ -27,25 +27,23 @@
   var SEM = [[.5, .42], [.5, .4], [.5, .45], [.42, .72]], NOMES = ['dragao', 'cerejeira', 'pastor', 'onca'];
   var P = 8.0, N = NOMES.length, CICLO = P * N, VIRA = 5.4;
   var hero = $('.hero'), quadro = $('.quadro'), fase = $('.q-fase'), qt = $('.q-t');
-  var barras = $$('.q-barras b'), amb = $$('.amb img'), COBS = window.COB || [];
+  var barras = $$('.q-barras b'), COBS = window.COB || [];
   var ultI = -1, ultF = '';
   function marca(t) {
     var i = Math.floor(t / P) % N, s = t - Math.floor(t / P) * P;
     barras.forEach(function (b, j) { b.style.transform = 'scaleX(' + (j < i ? 1 : j > i ? 0 : Math.min(s / (P - .9), 1)).toFixed(4) + ')'; });
     var f = s < 1.3 ? 'Antes' : s < VIRA ? 'Cobrindo' : 'Depois';
-    if (f !== ultF) { ultF = f; fase.textContent = f; quadro.classList.toggle('depois', f === 'Depois'); }
+    if (f !== ultF) { ultF = f; fase.textContent = f; hero.classList.toggle('depois', f === 'Depois'); }
     if (i !== ultI) {
       ultI = i; qt.style.opacity = 0;
-      amb.forEach(function (a, j) { a.classList.toggle('on', j === i); });
       setTimeout(function () { qt.textContent = (COBS[i] || {}).t || ''; qt.style.opacity = 1; }, 220);
     }
   }
   function estatico() {
-    $('.q-poster').src = 'assets/hero/dragao-d.webp';
-    fase.textContent = 'Depois'; quadro.classList.add('depois');
+    $('.q-poster').src = 'assets/hero/dragao-d.webp?v=3';
+    fase.textContent = 'Depois'; hero.classList.add('depois');
     barras.forEach(function (b, j) { b.style.transform = 'scaleX(' + (j === 0 ? 1 : 0) + ')'; });
   }
-  function tri() { return innerWidth > 860 && innerHeight > 520; }
   function iniciaGL() {
     var cv = $('.q-gl'), carregadas = 0, imgs = [];
     if (!window.cobHero) return false;
@@ -53,7 +51,7 @@
     if (!teste) return false;
     NOMES.forEach(function (n, i) {
       ['a', 'd'].forEach(function (k, j) {
-        var im = new Image(); im.decoding = 'async'; im.src = 'assets/hero/' + n + '-' + k + '.webp';
+        var im = new Image(); im.decoding = 'async'; im.src = 'assets/hero/' + n + '-' + k + '.webp?v=3';
         (imgs[i] = imgs[i] || [])[j] = im;
         im.onload = function () { if (++carregadas === N * 2) comeca(); };
         im.onerror = function () { iniciaVideo(); };
@@ -63,7 +61,7 @@
     function quadroGL(ts) {
       if (!t0) t0 = ts;
       var t = (ts - t0) / 1000;
-      if (tri()) H.triptico(t, devicePixelRatio || 1, .4); else H.desenha(t, devicePixelRatio || 1);
+      H.desenha(t, devicePixelRatio || 1);
       marca(t);
       raf = vis ? requestAnimationFrame(quadroGL) : 0;
     }
@@ -83,11 +81,11 @@
   function iniciaVideo() {
     if (videoTentado) return; videoTentado = true;
     var v = $('.q-video');
-    v.src = 'assets/video/cobertura.mp4?v=5'; v.preload = 'auto';
+    v.src = 'assets/video/cobertura.mp4?v=6'; v.preload = 'auto';
     var p = v.play();
     // iPhone em modo de economia recusa o autoplay: aí o shader faz o trabalho
     if (p && p.catch) p.catch(function () { if (!quadro.classList.contains('gl') && !iniciaGL()) estatico(); });
-    v.addEventListener('playing', function () { quadro.classList.add('vd'); }, { once: true });
+    v.addEventListener('playing', function () { quadro.classList.add('vd'); hero.classList.add('vd'); }, { once: true });
     v.addEventListener('error', function () { if (!iniciaGL()) estatico(); });
     (function laco() { if (!v.paused && quadro.classList.contains('vd')) marca(v.currentTime % CICLO); requestAnimationFrame(laco); })();
     document.addEventListener('visibilitychange', function () { if (!document.hidden && quadro.classList.contains('vd')) v.play().catch(function () {}); });

@@ -1,7 +1,8 @@
 /* Hero "cobertura ao vivo": a tatuagem antiga, e a nova cobrindo por cima.
    A tinta preta avança do ponto da peça (com a borda molhada), o desenho entra em preto e cinza
    e a cor vem logo atrás, como numa sessão acelerada. Depois passa para a próxima cobertura.
-   cobHero(canvas, pares[[imgAntes, imgDepois, [sx, sy]], ...], {guardar}) -> {P, n, fase(T), desenha(T, dpr)} */
+   cobHero(canvas, pares[[imgAntes, imgDepois, [sx, sy]], ...], {guardar, tam}) -> {P, n, fase(T), desenha(T, dpr)}
+   As fotos são recortes com alfa: o canvas é transparente e o símbolo aparece por trás. */
 (function () {
   var P = 8.0;                       // segundos por cobertura
   var VS = 'attribute vec2 p;varying vec2 vv;void main(){vv=p*.5+.5;vv.y=1.-vv.y;gl_Position=vec4(p,0.,1.);}';
@@ -16,11 +17,12 @@
     'float fb(vec2 p){float a=.5,r=0.;for(int k=0;k<5;k++){r+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return r;}',
     'float ease(float x){x=clamp(x,0.,1.);return x<.5?4.*x*x*x:1.-pow(-2.*x+2.,3.)/2.;}',
     'vec3 cinza(vec3 c){float l=dot(c,LUM);l=smoothstep(-.02,1.03,l);l=pow(l,1.1);return vec3(l)*vec3(1.,.985,.96);}',
-    'vec3 tx(sampler2D T,vec2 u,float z){return texture2D(T,(u-.5)/z+.5).rgb;}',
+    'vec4 tx(sampler2D T,vec2 u,float z){return texture2D(T,(u-.5)/z+.5);}',
     'void main(){',
     ' vec2 v=vv-.5; if(ar<1.){ v.x*=ar; v+=.5; } else { v.y/=ar; v.x+=.5; v.y+=clamp(c0.y,.5/ar,1.-.5/ar); }',
     ' float z=1.05-.05*ease(s/P);',
-    ' vec3 a=tx(A,v,z), d=tx(D,v,z);',
+    ' vec4 A4=tx(A,v,z), D4=tx(D,v,z);',
+    ' vec3 a=A4.rgb, d=D4.rgb;',
     ' vec3 an=mix(a,vec3(dot(a,LUM)),.3)*.92;',
     ' vec2 q=(v-c0)*vec2(.8,1.);',
     ' float dist=length(q)*2.;',
@@ -30,31 +32,33 @@
     ' float e2=dist+(fb(q*3.1+vec2(9.,1.))-.5)*.46+(fb(q*14.+3.)-.5)*.08;',
     ' float m1=(1.-smoothstep(r1-.045,r1,e1))*step(.001,r1);',
     ' float m2=(1.-smoothstep(r2-.07,r2,e2))*step(.001,r2);',
-    ' vec3 o=mix(an,cinza(d),m1);',
-    ' o=mix(o,d,m2);',
+    // recorte: a pele antiga some e a nova aparece junto com a tinta (alfa pré-multiplicado)
+    ' vec4 o=mix(vec4(an*A4.a,A4.a),vec4(cinza(d)*D4.a,D4.a),m1);',
+    ' o=mix(o,vec4(d*D4.a,D4.a),m2);',
     // borda molhada da tinta: escurece e tem um brilho fino
     ' float viva=step(.001,r1)*(1.-smoothstep(1.5,1.75,r1));',
     ' float rim=exp(-pow((e1-r1+.03)/.028,2.))*viva;',
     ' float bri=exp(-pow((e1-r1+.012)/.006,2.))*viva;',
-    ' o*=1.-.5*rim; o+=bri*.10;',
+    ' o.rgb*=1.-.5*rim; o.rgb+=bri*.10*o.a;',
     ' float vc=step(.001,r2)*(1.-smoothstep(1.5,1.75,r2));',
     ' float rc=exp(-pow((e2-r2+.04)/.05,2.))*vc;',
-    ' o+=(o-vec3(dot(o,LUM)))*.25*rc;',
+    ' o.rgb+=(o.rgb-vec3(dot(o.rgb,LUM)))*.25*rc;',
     // troca para a próxima cobertura: dissolve em tinta
     ' float tr=smoothstep(P-.9,P,s);',
     ' float k=fb(v*5.+vec2(s*.1,0.));',
     ' float mt=smoothstep(k-.12,k+.12,tr*1.25-.12);',
-    ' vec3 nx=texture2D(N,(v-.5)/1.05+.5).rgb; nx=mix(nx,vec3(dot(nx,LUM)),.3)*.92;',
-    ' o=mix(o,nx,mt)*(1.-.35*sin(tr*3.1416));',
-    // vinheta e grão
-    ' vec2 w=v-.5; o*=1.-.32*pow(length(w*vec2(1.1,.95))*1.35,2.2);',
-    ' o+=(h(v*res+fract(s)*91.)-.5)*.018;',
-    ' gl_FragColor=vec4(o*dim,1.);}'
+    ' vec4 N4=texture2D(N,(v-.5)/1.05+.5); vec3 nx=mix(N4.rgb,vec3(dot(N4.rgb,LUM)),.3)*.92;',
+    ' o=mix(o,vec4(nx*N4.a,N4.a),mt); o.rgb*=1.-.35*sin(tr*3.1416);',
+    // vinheta leve e grão só sobre a pele
+    ' vec2 w=v-.5; o.rgb*=1.-.2*pow(length(w*vec2(1.1,.95))*1.35,2.2);',
+    ' o.rgb+=(h(v*res+fract(s)*91.)-.5)*.018*o.a;',
+    ' o.a=clamp(o.a,0.,1.); o.rgb=clamp(o.rgb,0.,o.a);',
+    ' gl_FragColor=vec4(o.rgb*dim,o.a);}'
   ].join('\n');
 
   window.cobHero = function (cv, pares, op) {
     op = op || {};
-    var gl = cv.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: !!op.guardar, powerPreference: 'low-power' });
+    var gl = cv.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true, preserveDrawingBuffer: !!op.guardar, powerPreference: 'low-power' });
     if (!gl) return null;
     function sh(tp, src) { var o = gl.createShader(tp); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; }
     var pr = gl.createProgram();
@@ -98,20 +102,6 @@
       desenha: function (t, dpr) {
         var z = tamanho(dpr), f = fase(t);
         painel(f.i, f.s, 0, z[0], z[1], 1);
-      },
-      /* tríptico do PC: centro maior cobre primeiro, laterais juntas e espelhadas logo depois.
-         Deslocamentos 0 / +2 / +3 garantem três coberturas diferentes o tempo todo. */
-      triptico: function (t, dpr, larg) {
-        var z = tamanho(dpr), W = z[0], H = z[1], g = Math.max(1, Math.round(z[2] * 1.5));
-        larg = larg || .4;
-        var lado = Math.round(W * (1 - larg) / 2);
-        gl.viewport(0, 0, W, H); gl.clearColor(.039, .039, .043, 1); gl.clear(gl.COLOR_BUFFER_BIT);
-        var atraso = .9;
-        function f2(off, a) { var u = Math.max(t - a, 0), k = Math.floor(u / P); return { i: (k + off) % n, s: u - k * P }; }
-        var c = f2(0, 0), e = f2(2, atraso), d = f2(3, atraso);
-        painel(e.i, e.s, 0, lado - g, H, .62);
-        painel(c.i, c.s, lado + g, W - 2 * lado - 2 * g, H, 1);
-        painel(d.i, d.s, W - lado + g, lado - g, H, .62);
       }
     };
   };
