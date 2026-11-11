@@ -24,7 +24,7 @@
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
   /* hero "galeria no chão": quadros largados no chão; as obras se cobrem em tinta, um quadro depois do outro */
-  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=1', INTRO = 2.4;
+  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=2', INTRO = 2.4;
   var baixa = function () { return innerHeight <= 520 && innerWidth > innerHeight; };
   function estatico() { cena.classList.add('est'); }
   function iniciaGL(celular) {
@@ -44,13 +44,11 @@
       try { G = window.galeria(cv, { imgs: imgs, meta: meta, quadros: window.GALERIA[lay].map(function (q) { return Object.assign({}, q); }), fundo: fd }); } catch (e) { G = null; }
       if (!G) { falhou = true; if (!celular) iniciaVideo(); else estatico(); return; }
       cena.classList.add('gl');
-      var t0 = 0, vis = true, raf = 0, alvo = [0, 0], par = [0, 0], pausa = 0, tp = 0;
-      if (!celular) addEventListener('pointermove', function (e) { alvo = [(e.clientX / innerWidth - .5) * -26, (e.clientY / innerHeight - .5) * -18]; });
+      var t0 = 0, vis = true, raf = 0, pausa = 0, tp = 0;
       function quadro(ts) {
         if (!t0) t0 = ts;
         if (pausa) { t0 += ts - pausa; pausa = 0; }
-        par[0] += (alvo[0] - par[0]) * .045; par[1] += (alvo[1] - par[1]) * .045;
-        G.desenha((ts - t0) / 1000, devicePixelRatio || 1, par);
+        G.desenha((ts - t0) / 1000, devicePixelRatio || 1);
         tp = ts;
         raf = vis ? requestAnimationFrame(quadro) : 0;
       }

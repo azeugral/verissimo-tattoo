@@ -1,14 +1,15 @@
-/* Hero "galeria no chão": obras do Veríssimo em quadros estilizados, largados num chão de concreto escuro sob uma luz quente.
+/* Hero "galeria no chão" (fixo: sem mouse nem deriva; chão e molduras guardados em textura, só as obras são redesenhadas): obras do Veríssimo em quadros estilizados, largados num chão de concreto escuro sob uma luz quente.
    Em cada quadro, a obra seguinte cobre a anterior com tinta (borda molhada, preto e cinza, depois cor); os quadros trocam
    em onda, um depois do outro. No quadro principal, coberturas reais: a tatuagem antiga dá lugar ao trabalho novo.
    galeria(canvas, {imgs:{nome:Image}, meta:{nome:[cx,cy,z]}, quadros:[...], fundo:[ini,fim], guardar, tam})
      -> {P, desenha(t, dpr, par)}   (par = deslocamento do mouse em px CSS) */
 (function () {
-  var P = 13, TR = 6.8, CICLO = 52, W1 = 2 * Math.PI / 52, PARES = ['dragao', 'cerejeira', 'pastor', 'onca'];
+  var P = 13, TR = 6.8, CICLO = 52, POUSO = 2.6, PARES = ['dragao', 'cerejeira', 'pastor', 'onca'];
   var SEM = { dragao: [.5, .42], cerejeira: [.5, .4], pastor: [.5, .45], onca: [.42, .72] };
   var RUIDO = 'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}' +
     'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}' +
-    'float fb(vec2 p){float a=.5,r=0.;for(int k=0;k<5;k++){r+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return r;}';
+    'float fb(vec2 p){float a=.5,r=0.;for(int k=0;k<5;k++){r+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return r;}' +
+    'float fb3(vec2 p){float a=.5,r=0.;for(int k=0;k<3;k++){r+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return r/.875;}';
   var VQ = 'attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(p,0.,1.);}';
   /* chão: concreto escuro, poros, luz quente de cima e, embaixo, a cor da página */
   var FCHAO = ['precision highp float;varying vec2 uv;uniform vec2 res,par,fd;', RUIDO,
@@ -34,13 +35,13 @@
     'void main(){float d=sd(lp,meia);float a=(1.-smoothstep(-blur,blur,d))*forca;gl_FragColor=vec4(0.,0.,0.,a);}'].join('\n');
   /* quadro: moldura (3 estilos), passe-partout com chanfro, janela da obra com a cobertura em tinta e o vidro */
   var FQUADRO = ['precision highp float;varying vec2 lp;',
-    'uniform vec2 meia;uniform float bo,ma,est,px,alfa,luz;',
+    'uniform vec2 meia;uniform float bo,ma,est,px,alfa,luz,parte;',
     'uniform sampler2D A,B;uniform vec3 zA,zB;uniform vec2 c0;uniform float s,modo,dA,dB;', RUIDO,
     'const vec3 LUM=vec3(.299,.587,.114);',
     'vec3 cinza(vec3 c){float l=dot(c,LUM);l=smoothstep(-.02,1.03,l);return vec3(pow(l,1.1))*vec3(1.,.985,.96);}',
     'vec3 estudio(vec2 u){float r=length((u-vec2(.5,.36))*vec2(1.,.8));return mix(vec3(.12,.112,.106),vec3(.04,.038,.037),smoothstep(0.,.78,r));}',
     'vec3 obra(sampler2D T,vec3 z,vec2 u,float velha){vec4 t=texture2D(T,(u-.5)/z.z+z.xy);',
-    ' vec3 c=t.rgb; c=mix(c,mix(c,vec3(dot(c,LUM)),.3)*.92,velha); return mix(estudio(u),c,t.a);}',
+    ' vec3 c=t.rgb; c=mix(c,mix(c,vec3(dot(c,LUM)),.3)*.92,velha); return c+estudio(u)*(1.-t.a);}',
     'vec3 arte(vec2 u){',
     ' vec3 a=obra(A,zA,u,dA); if(s<0.) return a;',
     ' vec3 b=obra(B,zB,u,dB);',
@@ -58,39 +59,41 @@
     ' float vc=step(.001,r2)*(1.-smoothstep(1.85,2.15,r2)); float rc=exp(-pow((e2-r2+.04)/.05,2.))*vc;',
     ' o+=(o-vec3(dot(o,LUM)))*.25*rc;',
     ' return o;}',
+    'vec3 borda(float al,float ac,float t,float lit){',
+    ' float perf=sin(t*3.14159), fw=meia.x*2.;',
+    ' vec3 base=est<.5?vec3(.032,.031,.033):est<1.5?vec3(.15,.092,.058):vec3(.42,.29,.18);',
+    ' float veio=est>.5&&est<1.5?fb3(vec2(al/fw*3.,ac/bo*2.)):.5;',
+    ' float esc=est>1.5?fb3(vec2(al/fw*.8,ac/bo*2.5)):.5;',
+    ' vec3 c=base*(.7+.55*perf)*(.85+.3*veio)*(.92+.16*esc);',
+    ' c+=vec3(lit*(est>1.5?.12:.05))*perf; c+=vec3(.06)*smoothstep(.16,0.,t)*max(lit,0.);',
+    ' return c*(1.-.55*smoothstep(.82,1.,t));}',
     'void main(){',
     ' vec2 dd=meia-abs(lp); float d=min(dd.x,dd.y);',
-    ' float aa=smoothstep(0.,1.2*px,d); if(aa<=0.) discard;',
-    ' vec2 nr=dd.x<dd.y?vec2(sign(lp.x),0.):vec2(0.,sign(lp.y)); float lit=dot(nr,vec2(-.6,-.8));',
-    ' vec2 jan=meia-bo-ma; vec3 col;',
-    ' if(d<bo){',
-    '  float t=d/bo, perf=sin(t*3.14159);',
-    '  vec3 base=est<.5?vec3(.032,.031,.033):est<1.5?vec3(.15,.092,.058):vec3(.42,.29,.18);',
-    '  float veio=est>.5&&est<1.5?fb(vec2((nr.x!=0.?lp.y:lp.x)*.012,(nr.x!=0.?lp.x:lp.y)*.35)):.5;',
-    '  float esc=est>1.5?fb(vec2((nr.x!=0.?lp.y:lp.x)*.004,(nr.x!=0.?lp.x:lp.y)*2.)):.5;',
-    '  col=base*(.7+.55*perf)*(.85+.3*veio)*(.92+.16*esc);',
-    '  col+=vec3(lit*(est>1.5?.12:.05))*perf;',
-    '  col+=vec3(.06)*smoothstep(.16,0.,t)*max(lit,0.);',
-    '  col*=1.-.55*smoothstep(.82,1.,t);',
-    ' } else if(d<bo+ma){',
+    ' float aa=smoothstep(0.,1.5,d); if(aa<=0.) discard;',
+    ' float jb=bo+ma; if(parte>.5&&d<jb-2.) discard;',
+    ' float wy=smoothstep(-1.,1.,dd.y-dd.x);',
+    ' float lit=mix(-.8*sign(lp.y),-.6*sign(lp.x),wy);',
+    ' vec3 col=vec3(0.);',
+    ' if(d<bo+1.){ float t=clamp(d/bo,0.,1.);',
+    '  col=mix(borda(lp.x,lp.y,t,-.8*sign(lp.y)),borda(lp.y,lp.x,t,-.6*sign(lp.x)),wy); }',
+    ' if(d>bo-1.&&d<jb+1.){',
     '  vec3 pp=est<.5?vec3(.925,.9,.855):vec3(.055,.053,.052);',
-    '  col=pp*(.97+.05*(n(lp*.35/px)*.5+n(lp*1.2/px)*.5));',
-    '  col*=1.-.28*exp(-(d-bo)/(4.*px));',
-    '  float dw=bo+ma-d;',
-    '  col=mix(col,(est<.5?vec3(1.,.985,.95):vec3(.2,.19,.18))*(.9-.1*lit),smoothstep(3.*px,.5*px,dw));',
-    ' } else {',
-    '  vec2 u=(lp+jan)/(2.*jan);',
-    '  col=arte(u);',
-    '  col*=1.-.42*exp(-(d-bo-ma)/(5.*px));',
-    ' }',
-    ' if(d>bo){ float g=(lp.x*.55+lp.y*.83)/length(meia)+luz;',
-    '  col+=vec3(.05)*smoothstep(-.2,.05,g)*smoothstep(.45,.08,g)+vec3(.025)*smoothstep(.55,.62,g)*smoothstep(.75,.62,g); }',
+    '  vec3 mc=pp*(.97+.04*n(lp*.06/px));',
+    '  mc*=1.-.28*exp(-max(d-bo,0.)/(4.*px));',
+    '  mc=mix(mc,(est<.5?vec3(1.,.985,.95):vec3(.2,.19,.18))*(.9-.1*lit),smoothstep(3.*px,.5*px,jb-d));',
+    '  col=mix(col,mc,smoothstep(bo-.5,bo+.5,d)); }',
+    ' if(d>jb-1.){ vec2 jan=meia-jb; vec2 u=(lp+jan)/(2.*jan);',
+    '  vec3 ac=arte(u)*(1.-.42*exp(-max(d-jb,0.)/(5.*px)));',
+    '  col=mix(col,ac,smoothstep(jb-.5,jb+.5,d)); }',
+    ' float g=(lp.x*.55+lp.y*.83)/length(meia)+luz;',
+    ' col+=(vec3(.05)*smoothstep(-.2,.05,g)*smoothstep(.45,.08,g)+vec3(.025)*smoothstep(.55,.62,g)*smoothstep(.75,.62,g))*smoothstep(bo-.5,bo+.5,d);',
     ' gl_FragColor=vec4(col*aa*alfa,aa*alfa);}'].join('\n');
+  var FBL = 'precision mediump float;uniform sampler2D T;uniform vec2 res;void main(){gl_FragColor=texture2D(T,gl_FragCoord.xy/res);}';
 
   function ease(x) { x = Math.min(1, Math.max(0, x)); return 1 - Math.pow(1 - x, 3); }
 
   window.galeria = function (cv, op) {
-    var gl = cv.getContext('webgl', { antialias: true, alpha: false, premultipliedAlpha: true, preserveDrawingBuffer: !!op.guardar, powerPreference: 'high-performance' });
+    var gl = cv.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: true, preserveDrawingBuffer: !!op.guardar, powerPreference: 'high-performance' });
     if (!gl) return null;
     function sh(tp, src) { var o = gl.createShader(tp); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; }
     function prog(v, f) {
@@ -105,14 +108,40 @@
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    var TX = {};
+    var TX = {}, tc = document.createElement('canvas'); tc.width = 512; tc.height = 1024;
+    var t2 = tc.getContext('2d'); t2.imageSmoothingQuality = 'high';
+    var ani = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     Object.keys(op.imgs).forEach(function (k) {
+      t2.clearRect(0, 0, 512, 1024); t2.drawImage(op.imgs[k], 0, 0, 512, 1024);
       var t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, op.imgs[k]);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tc);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      if (ani) gl.texParameterf(gl.TEXTURE_2D, ani.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(4, gl.getParameter(ani.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
       TX[k] = t;
     });
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    /* camadas guardadas: o chão (fixo) e, depois que os quadros pousam, a cena inteira; a cada quadro só as obras são refeitas */
+    var BL = prog(VQ, FBL), FB = {};
+    function alvo(nome, W, H) {
+      var f = FB[nome]; if (f && f.W === W && f.H === H) return f;
+      if (f) { gl.deleteTexture(f.t); gl.deleteFramebuffer(f.f); }
+      var t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      var fo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return (FB[nome] = { t: t, f: fo, W: W, H: H, ok: false });
+    }
+    function copia(f, W, H) {
+      gl.disable(gl.BLEND); gl.useProgram(BL.p);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, f.t); gl.uniform1i(BL.u.T, 0); gl.uniform2f(BL.u.res, W, H);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     var M = op.meta || {};
     var Z = function (k) { return M[k] || [.5, .5, 1]; };
     var Q = op.quadros.map(function (q, k) { q.k = k; return q; }).sort(function (a, b) { return a.w - b.w; });
@@ -131,27 +160,38 @@
     }
     return {
       P: P, CICLO: CICLO,
-      desenha: function (t, dpr, par) {
-        var r = cv.getBoundingClientRect(); dpr = Math.min(dpr || 1, 2);
-        var W = op.tam ? op.tam[0] : Math.max(2, Math.round(r.width * dpr)), H = op.tam ? op.tam[1] : Math.max(2, Math.round(r.height * dpr));
+      desenha: function (t, dpr) {
+        var r = cv.getBoundingClientRect(), k = Math.min(dpr || 1, 2), W, H, u;
+        if (op.tam) { W = op.tam[0]; H = op.tam[1]; u = op.u || 1; }
+        else {
+          var w = r.width * k, h = r.height * k, m = Math.sqrt(Math.min(1, 4.2e6 / Math.max(1, w * h)));
+          W = Math.max(2, Math.round(w * m)); H = Math.max(2, Math.round(h * m)); u = k * m;
+        }
         if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-        var u = op.tam ? 1 : dpr; par = par || [0, 0];
-        var dx = (par[0] + Math.sin(t * W1) * 5) * u, dy = (par[1] + Math.cos(t * W1 * 2) * 4) * u;
         gl.viewport(0, 0, W, H);
-        gl.disable(gl.BLEND);
-        gl.useProgram(CH.p);
-        gl.uniform2f(CH.u.res, W, H); gl.uniform2f(CH.u.par, dx, dy); gl.uniform2f(CH.u.fd, op.fundo[0], op.fundo[1]);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-        Q.forEach(function (q) {
-          var e = ease((t - .15 - q.ordem * .14) / 1.35), lev = 1 - e;
-          var fw = q.w * H, est = q.est;
-          var bo = fw * (est === 0 ? .052 : est === 1 ? .046 : .02), ma = fw * (est === 0 ? .085 : est === 1 ? .06 : 0);
-          var jw = fw - 2 * (bo + ma), fh = jw * 1.25 + 2 * (bo + ma);
-          var rot = (q.rot + Math.sin(t * W1 * 2 + q.k * 1.7) * .3) * Math.PI / 180;
-          var esc = 1 + .07 * lev, dep = q.dep || .8;
-          var cx = W / 2 + q.x * H + dx * dep, cy = q.y * H + dy * dep - 10 * u * lev;
-          // sombra larga e sombra de contato
+        var chao = alvo('chao', W, H), cena = alvo('cena', W, H);
+        if (!chao.ok) {
+          gl.bindFramebuffer(gl.FRAMEBUFFER, chao.f); gl.disable(gl.BLEND); gl.useProgram(CH.p);
+          gl.uniform2f(CH.u.res, W, H); gl.uniform2f(CH.u.par, 0, 0); gl.uniform2f(CH.u.fd, op.fundo[0], op.fundo[1]);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); chao.ok = true; cena.ok = false;
+        }
+        var pousou = t > POUSO;
+        if (pousou && !cena.ok) { gl.bindFramebuffer(gl.FRAMEBUFFER, cena.f); copia(chao, W, H); quadros(t, W, H, u, 0); cena.ok = true; }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        if (pousou) { copia(cena, W, H); quadros(t, W, H, u, 1); }
+        else { copia(chao, W, H); quadros(t, W, H, u, 0); }
+      }
+    };
+    function quadros(t, W, H, u, parte) {
+      gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+      Q.forEach(function (q) {
+        var e = ease((t - .15 - q.ordem * .14) / 1.35), lev = 1 - e;
+        var fw = q.w * H, est = q.est;
+        var bo = fw * (est === 0 ? .052 : est === 1 ? .046 : .02), ma = fw * (est === 0 ? .085 : est === 1 ? .06 : 0);
+        var jw = fw - 2 * (bo + ma), fh = jw * 1.25 + 2 * (bo + ma);
+        var rot = q.rot * Math.PI / 180, esc = 1 + .07 * lev;
+        var cx = W / 2 + q.x * H, cy = q.y * H - 10 * u * lev;
+        if (!parte) {
           gl.useProgram(SO.p);
           gl.uniform2f(SO.u.res, W, H); gl.uniform1f(SO.u.rot, rot); gl.uniform1f(SO.u.esc, esc);
           [[(10 + 26 * lev) * u * q.w * 2.4, (14 + 30 * lev) * u * q.w * 2.4, (16 + 30 * lev) * u, .5 * e], [3 * u, 4 * u, 3 * u, .55 * e]].forEach(function (s) {
@@ -159,22 +199,22 @@
             gl.uniform2f(SO.u.ex, s[2] * 2, s[2] * 2); gl.uniform1f(SO.u.blur, s[2]); gl.uniform1f(SO.u.forca, s[3]);
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
           });
-          var st = estado(q, t);
-          gl.useProgram(QU.p);
-          gl.uniform2f(QU.u.res, W, H); gl.uniform2f(QU.u.cen, cx, cy); gl.uniform2f(QU.u.meia, fw / 2, fh / 2); gl.uniform2f(QU.u.ex, 0, 0);
-          gl.uniform1f(QU.u.rot, rot); gl.uniform1f(QU.u.esc, esc);
-          gl.uniform1f(QU.u.bo, bo); gl.uniform1f(QU.u.ma, ma); gl.uniform1f(QU.u.est, est); gl.uniform1f(QU.u.px, u);
-          gl.uniform1f(QU.u.alfa, Math.min(1, e * 1.6)); gl.uniform1f(QU.u.luz, dx / W * .5 + Math.sin(t * W1 + q.k) * .06);
-          gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TX[st.A]); gl.uniform1i(QU.u.A, 0);
-          gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, TX[st.B]); gl.uniform1i(QU.u.B, 1);
-          var za = Z(st.A), zb = Z(st.B);
-          gl.uniform3f(QU.u.zA, za[0], za[1], za[2]); gl.uniform3f(QU.u.zB, zb[0], zb[1], zb[2]);
-          gl.uniform2f(QU.u.c0, st.c0[0], st.c0[1]); gl.uniform1f(QU.u.s, st.s); gl.uniform1f(QU.u.modo, st.modo);
-          gl.uniform1f(QU.u.dA, st.dA); gl.uniform1f(QU.u.dB, st.dB);
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        });
-      }
-    };
+        }
+        var st = estado(q, t);
+        gl.useProgram(QU.p);
+        gl.uniform2f(QU.u.res, W, H); gl.uniform2f(QU.u.cen, cx, cy); gl.uniform2f(QU.u.meia, fw / 2, fh / 2); gl.uniform2f(QU.u.ex, 0, 0);
+        gl.uniform1f(QU.u.rot, rot); gl.uniform1f(QU.u.esc, esc); gl.uniform1f(QU.u.parte, parte);
+        gl.uniform1f(QU.u.bo, bo); gl.uniform1f(QU.u.ma, ma); gl.uniform1f(QU.u.est, est); gl.uniform1f(QU.u.px, u);
+        gl.uniform1f(QU.u.alfa, Math.min(1, e * 1.6)); gl.uniform1f(QU.u.luz, ((q.k % 3) - 1) * .05);
+        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TX[st.A]); gl.uniform1i(QU.u.A, 0);
+        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, TX[st.B]); gl.uniform1i(QU.u.B, 1);
+        var za = Z(st.A), zb = Z(st.B);
+        gl.uniform3f(QU.u.zA, za[0], za[1], za[2]); gl.uniform3f(QU.u.zB, zb[0], zb[1], zb[2]);
+        gl.uniform2f(QU.u.c0, st.c0[0], st.c0[1]); gl.uniform1f(QU.u.s, st.s); gl.uniform1f(QU.u.modo, st.modo);
+        gl.uniform1f(QU.u.dA, st.dA); gl.uniform1f(QU.u.dB, st.dB);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      });
+    }
   };
   /* composições: x em alturas a partir do centro, y em alturas a partir do topo, w = largura do quadro em alturas */
   window.GALERIA = {

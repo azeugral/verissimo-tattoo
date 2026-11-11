@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Grava o hero "galeria no chão" em MP4 para o celular (800x1000, composição GALERIA.cel do galeria.js, 30 fps).
+"""Grava o hero "galeria no chão" em MP4 para o celular (1080x1350, composição GALERIA.cel do galeria.js, 30 fps).
 O vídeo abre com os quadros pousando no chão (INTRO = 2,4 s) e depois roda um ciclo inteiro de 52 s; no site, ao
 terminar, ele volta para INTRO (estado idêntico ao do fim), então o laço não tem emenda. Também grava o pôster.
 Precisa do servidor local: python -m http.server 8767 --bind 127.0.0.1. Uso: python tools/gerar_galeria.py"""
@@ -7,7 +7,7 @@ import base64, subprocess
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 S = Path(__file__).resolve().parent.parent
-W, H, FPS, INTRO, CICLO = 800, 1000, 30, 2.4, 52.0
+W, H, FPS, INTRO, CICLO = 1620, 2025, 30, 2.4, 52.0  # renderiza 1,5x e reduz para 1080x1350 (sem serrilhado)
 URL = 'http://127.0.0.1:8767/'
 saida = S / 'assets/video/galeria.mp4'
 with sync_playwright() as p:
@@ -20,12 +20,13 @@ with sync_playwright() as p:
       const Q=GALERIA.cel.map(q=>Object.assign({{}},q));const ns=new Set();
       Q.forEach(q=>q.cob!=null?['dragao','cerejeira','pastor','onca'].forEach(n=>{{ns.add(n+'-a');ns.add(n+'-d')}}):q.arts.forEach(n=>ns.add(n)));
       for(const n of ns){{const m=new Image();m.src='/assets/galeria/'+n+'.webp';await m.decode();imgs[n]=m}}
-      const cv=document.getElementById('c');window.G=galeria(cv,{{imgs,meta,quadros:Q,fundo:[.9,1],guardar:true,tam:[{W},{H}]}});
-      window.QUADRO=t=>{{G.desenha(t,1,[0,0]);return cv.toDataURL('image/jpeg',.94)}}}}""")
-    (S / 'assets/video/galeria.jpg').write_bytes(base64.b64decode(g.evaluate('QUADRO(11)').split(',', 1)[1]))
+      const cv=document.getElementById('c');window.G=galeria(cv,{{imgs,meta,quadros:Q,fundo:[.9,1],guardar:true,tam:[{W},{H}],u:{H/1000}}});
+      window.QUADRO=t=>{{G.desenha(t,1);return cv.toDataURL('image/jpeg',.94)}}}}""")
+    import io; from PIL import Image
+    Image.open(io.BytesIO(base64.b64decode(g.evaluate('QUADRO(11)').split(',', 1)[1]))).resize((1080, 1350), Image.LANCZOS).save(S / 'assets/video/galeria.jpg', quality=86)
     n = int(round((INTRO + CICLO) * FPS))
     ff = subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', str(FPS), '-c:v', 'mjpeg', '-i', '-',
-                           '-vf', 'scale=in_range=full:out_range=limited', '-color_range', 'tv', '-c:v', 'libx264', '-preset', 'slow', '-crf', '26', '-pix_fmt', 'yuv420p', '-tune', 'film',
+                           '-vf', 'scale=1080:1350:flags=lanczos:in_range=full:out_range=limited', '-color_range', 'tv', '-c:v', 'libx264', '-preset', 'slow', '-crf', '25', '-pix_fmt', 'yuv420p', '-tune', 'film',
                            '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-g', str(FPS * 2),
                            '-force_key_frames', str(INTRO), '-movflags', '+faststart', '-an', str(saida)], stdin=subprocess.PIPE)
     for k in range(n):
