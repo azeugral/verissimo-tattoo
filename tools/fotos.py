@@ -55,7 +55,7 @@ for k, slug, tit, cat, cob, fy, z in TRAB:
 
 # coberturas: antes -> depois
 PARES = [('dragao', '86.3', '86.0', 'Dragão antigo virou dragão oriental', .45, .4),
-         ('arara', '101.5', '101.0', 'Arara e mata sobre tatuagem antiga', .5, .5),
+         ('onca', '101.7', '101.3', 'Onça antiga virou onça e mata', .5, .6),
          ('cerejeira', '96.3', '96.0', 'Flores de cerejeira sobre tatuagem antiga', .4, .5),
          ('pastor', '69.3', '69.0', 'Retrato do pastor-alemão sobre a caveira', .5, .5)]
 pares = []

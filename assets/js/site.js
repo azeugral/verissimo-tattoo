@@ -24,15 +24,15 @@
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
   /* hero: cobertura ao vivo */
-  var SEM = [[.5, .42], [.45, .5], [.5, .4], [.5, .45]], NOMES = ['dragao', 'arara', 'cerejeira', 'pastor'];
-  var P = 8.0, N = NOMES.length, CICLO = P * N, VIRA = 3.1;
+  var SEM = [[.5, .42], [.42, .72], [.5, .4], [.5, .45]], NOMES = ['dragao', 'onca', 'cerejeira', 'pastor'];
+  var P = 8.0, N = NOMES.length, CICLO = P * N, VIRA = 5.4;
   var hero = $('.hero'), quadro = $('.quadro'), fase = $('.q-fase'), qt = $('.q-t');
   var barras = $$('.q-barras b'), amb = $$('.amb img'), COBS = window.COB || [];
   var ultI = -1, ultF = '';
   function marca(t) {
     var i = Math.floor(t / P) % N, s = t - Math.floor(t / P) * P;
     barras.forEach(function (b, j) { b.style.transform = 'scaleX(' + (j < i ? 1 : j > i ? 0 : Math.min(s / (P - .9), 1)).toFixed(4) + ')'; });
-    var f = s < VIRA ? 'Antes' : 'Depois';
+    var f = s < 1.3 ? 'Antes' : s < VIRA ? 'Cobrindo' : 'Depois';
     if (f !== ultF) { ultF = f; fase.textContent = f; quadro.classList.toggle('depois', f === 'Depois'); }
     if (i !== ultI) {
       ultI = i; qt.style.opacity = 0;
@@ -81,7 +81,7 @@
   function iniciaVideo() {
     if (videoTentado) return; videoTentado = true;
     var v = $('.q-video');
-    v.src = 'assets/video/cobertura.mp4'; v.preload = 'auto';
+    v.src = 'assets/video/cobertura.mp4?v=3'; v.preload = 'auto';
     var p = v.play();
     // iPhone em modo de economia recusa o autoplay: aí o shader faz o trabalho
     if (p && p.catch) p.catch(function () { if (!quadro.classList.contains('gl') && !iniciaGL()) estatico(); });

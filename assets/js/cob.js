@@ -4,11 +4,11 @@
    cobHero(canvas, pares[[imgAntes, imgDepois, [sx, sy]], ...], {guardar}) -> {P, n, fase(T), desenha(T, dpr)} */
 (function () {
   var P = 8.0;                       // segundos por cobertura
-  var VS = 'attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;v.y=1.-v.y;gl_Position=vec4(p,0.,1.);}';
+  var VS = 'attribute vec2 p;varying vec2 vv;void main(){vv=p*.5+.5;vv.y=1.-vv.y;gl_Position=vec4(p,0.,1.);}';
   var FS = [
     'precision highp float;',
-    'varying vec2 v;',
-    'uniform sampler2D A,D,N;uniform vec2 c0;uniform float s,P;uniform vec2 res;',
+    'varying vec2 vv;',
+    'uniform sampler2D A,D,N;uniform vec2 c0;uniform float s,P,ar;uniform vec2 res;',
     'const vec3 LUM=vec3(.299,.587,.114);',
     'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
     'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
@@ -18,6 +18,7 @@
     'vec3 cinza(vec3 c){float l=dot(c,LUM);l=smoothstep(-.02,1.03,l);l=pow(l,1.1);return vec3(l)*vec3(1.,.985,.96);}',
     'vec3 tx(sampler2D T,vec2 u,float z){return texture2D(T,(u-.5)/z+.5).rgb;}',
     'void main(){',
+    ' vec2 v=vv-.5; if(ar<1.) v.x*=ar; else v.y/=ar; v+=.5;',
     ' float z=1.05-.05*ease(s/P);',
     ' vec3 a=tx(A,v,z), d=tx(D,v,z);',
     ' vec3 an=mix(a,vec3(dot(a,LUM)),.3)*.92;',
@@ -70,7 +71,7 @@
       return t;
     }
     var T = pares.map(function (p) { return [tex(p[0]), tex(p[1]), p[2] || [.5, .5]]; });
-    var U = {}; ['A', 'D', 'N', 'c0', 's', 'P', 'res'].forEach(function (k) { U[k] = gl.getUniformLocation(pr, k); });
+    var U = {}; ['A', 'D', 'N', 'c0', 's', 'P', 'res', 'ar'].forEach(function (k) { U[k] = gl.getUniformLocation(pr, k); });
     gl.uniform1i(U.A, 0); gl.uniform1i(U.D, 1); gl.uniform1i(U.N, 2); gl.uniform1f(U.P, P);
     var n = T.length;
     function fase(t) { var i = Math.floor(t / P) % n; return { i: i, s: t - Math.floor(t / P) * P }; }
@@ -86,7 +87,7 @@
         gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, c[0]);
         gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, c[1]);
         gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, nx[0]);
-        gl.uniform2f(U.c0, c[2][0], c[2][1]); gl.uniform1f(U.s, f.s); gl.uniform2f(U.res, W, H);
+        gl.uniform2f(U.c0, c[2][0], c[2][1]); gl.uniform1f(U.s, f.s); gl.uniform2f(U.res, W, H); gl.uniform1f(U.ar, (W / H) / .8);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
     };
