@@ -24,7 +24,7 @@
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
   /* hero "galeria no chão": quadros largados no chão; as obras se cobrem em tinta, um quadro depois do outro */
-  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=3', INTRO = 2.4;
+  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=4', INTRO = 2.4;
   var baixa = function () { return innerHeight <= 520 && innerWidth > innerHeight; };
   function estatico() { cena.classList.add('est'); }
   function iniciaGL(celular) {
@@ -35,7 +35,7 @@
     var lay = celular ? 'cel' : baixa() ? 'baixa' : 'pc';
     var nomes = {};
     window.GALERIA[lay].forEach(function (q) {
-      if (q.cob != null) ['dragao', 'cerejeira', 'pastor', 'onca'].forEach(function (n) { nomes[n + '-a'] = nomes[n + '-d'] = 1; });
+      if (q.cob != null) window.GALERIA.seq.forEach(function (n) { if (/^(dragao|cerejeira|pastor|onca)$/.test(n)) nomes[n + '-a'] = nomes[n + '-d'] = 1; else nomes[n] = 1; });
       else q.arts.forEach(function (n) { nomes[n] = 1; });
     });
     function pronto() {

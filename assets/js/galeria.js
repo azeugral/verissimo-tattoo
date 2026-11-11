@@ -4,7 +4,7 @@
    galeria(canvas, {imgs:{nome:Image}, meta:{nome:[cx,cy,z]}, quadros:[...], fundo:[ini,fim], guardar, tam})
      -> {P, desenha(t, dpr, par)}   (par = deslocamento do mouse em px CSS) */
 (function () {
-  var P = 13, TR = 6.8, CICLO = 52, POUSO = 2.6, PARES = ['dragao', 'cerejeira', 'pastor', 'onca'];
+  var P = 13, TR = 6.8, CICLO = 52, POUSO = 2.6, SEQ = ['dragao', 'ayrton-senna', 'pastor', 'musico'];
   var SEM = { dragao: [.5, .42], cerejeira: [.5, .4], pastor: [.5, .45], onca: [.42, .72] };
   var RUIDO = 'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}' +
     'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}' +
@@ -154,10 +154,14 @@
     function estado(q, t) {
       var sl = ((t - q.off) % CICLO + CICLO) % CICLO, i = Math.floor(sl / P), si = sl - i * P;
       if (q.cob != null) {
-        var pa = PARES[(q.cob + i) % 4], pb = PARES[(q.cob + i + 1) % 4];
-        if (si < 1.8) return { A: pa + '-a', B: pa + '-d', s: -1, modo: 1, dA: 1, dB: 0, c0: SEM[pa] };
-        if (si < P - 1.6) return { A: pa + '-a', B: pa + '-d', s: si - 1.8, modo: 1, dA: 1, dB: 0, c0: SEM[pa] };
-        return { A: pa + '-d', B: pb + '-a', s: si - (P - 1.6), modo: 2, dA: 0, dB: 1, c0: SEM[pb] };
+        /* quadro central: alterna coberturas reais (antes -> depois em tinta) e obras de realismo (a tinta cobre a
+           anterior); antes de cada cobertura, dissolve para a pele com a tatuagem antiga */
+        var sq = SEQ, n = sq.length, cur = sq[(q.cob + i) % n], nx = sq[(q.cob + i + 1) % n], pv = sq[(q.cob + i + n - 1) % n];
+        var par = function (x) { return !!SEM[x]; }, ini = function (x) { return par(x) ? x + '-a' : x; }, fim = function (x) { return par(x) ? x + '-d' : x; };
+        var vai = si >= P - 1.6 && par(nx);
+        if (vai) return { A: fim(cur), B: nx + '-a', s: si - (P - 1.6), modo: 2, dA: 0, dB: 1, c0: SEM[nx] };
+        if (par(cur)) return { A: cur + '-a', B: cur + '-d', s: si < 1.8 ? -1 : si - 1.8, modo: 1, dA: 1, dB: 0, c0: SEM[cur] };
+        return { A: fim(pv), B: cur, s: si, modo: 0, dA: 0, dB: 0, c0: [.5, .4] };
       }
       var n = q.arts.length, a = q.arts[i % n], b = q.arts[(i + 1) % n];
       return { A: a, B: b, s: si - (P - TR), modo: 0, dA: 0, dB: 0, c0: [.5, .44] };
@@ -237,6 +241,7 @@
   };
   /* composições: x em alturas a partir do centro, y em alturas a partir do topo, w = largura do quadro em alturas */
   window.GALERIA = {
+    seq: SEQ,
     pc: [
       { cob: 0, x: 0, y: .385, w: .40, rot: -2, est: 0, dep: 1, off: 0, ordem: 0 },
       { arts: ['leao-chamas', 'jesus-cor'], x: -.47, y: .34, w: .28, rot: 6.5, est: 1, dep: .85, off: 1.9, ordem: 1 },

@@ -18,7 +18,7 @@ with sync_playwright() as p:
     g.add_script_tag(url=URL + 'assets/js/galeria.js')
     g.evaluate(f"""async()=>{{const meta=await (await fetch('/assets/galeria/galeria.json')).json();const imgs={{}};
       const Q=GALERIA.cel.map(q=>Object.assign({{}},q));const ns=new Set();
-      Q.forEach(q=>q.cob!=null?['dragao','cerejeira','pastor','onca'].forEach(n=>{{ns.add(n+'-a');ns.add(n+'-d')}}):q.arts.forEach(n=>ns.add(n)));
+      Q.forEach(q=>q.cob!=null?GALERIA.seq.forEach(n=>{{if(/^(dragao|cerejeira|pastor|onca)$/.test(n)){{ns.add(n+'-a');ns.add(n+'-d')}}else ns.add(n)}}):q.arts.forEach(n=>ns.add(n)));
       for(const n of ns){{const m=new Image();m.src='/assets/galeria/'+n+'.webp';await m.decode();imgs[n]=m}}
       const cv=document.getElementById('c');window.G=galeria(cv,{{imgs,meta,quadros:Q,fundo:[.9,1],guardar:true,tam:[{W},{H}],u:{H/1000}}});
       window.QUADRO=t=>{{G.desenha(t,1);return cv.toDataURL('image/jpeg',.94)}}}}""")

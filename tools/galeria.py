@@ -11,8 +11,8 @@ from rembg import remove, new_session
 
 S = Path(__file__).resolve().parent.parent
 O = S / 'assets/galeria'; O.mkdir(exist_ok=True)
-REAL = ['leao-chamas', 'urso', 'santa-rita', 'indigena', 'itachi', 'jesus-cor',
-        'retrato-asas', 'tigre', 'rosto-cosmico', 'samurai-pc', 'harpia', 'samurai-cor']
+REAL = ['leao-chamas', 'urso', 'santa-rita', 'indigena', 'itachi', 'jesus-cor', 'ayrton-senna', 'musico',
+        'retrato-asas', 'tigre', 'rosto-cosmico', 'samurai-pc']
 COB = ['dragao', 'cerejeira', 'pastor', 'onca']
 ses = new_session('birefnet-general-lite')
 lst = []
