@@ -45,6 +45,7 @@
     fase.textContent = 'Depois'; quadro.classList.add('depois');
     barras.forEach(function (b, j) { b.style.transform = 'scaleX(' + (j === 0 ? 1 : 0) + ')'; });
   }
+  function tri() { return innerWidth > 860 && innerHeight > 520; }
   function iniciaGL() {
     var cv = $('.q-gl'), carregadas = 0, imgs = [];
     if (!window.cobHero) return false;
@@ -62,7 +63,8 @@
     function quadroGL(ts) {
       if (!t0) t0 = ts;
       var t = (ts - t0) / 1000;
-      H.desenha(t, devicePixelRatio || 1); marca(t);
+      if (tri()) H.triptico(t, devicePixelRatio || 1, .4); else H.desenha(t, devicePixelRatio || 1);
+      marca(t);
       raf = vis ? requestAnimationFrame(quadroGL) : 0;
     }
     function comeca() {

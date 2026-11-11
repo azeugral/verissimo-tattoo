@@ -97,17 +97,18 @@ p{margin:0}
 .pronto.hero .hero-sub{opacity:1;transform:none;transition-delay:.7s}
 .pronto.hero .hero-bts{opacity:1;transform:none;transition-delay:.82s}
 
-/* PC: a cobertura ocupa a altura toda; as laterais se dissolvem na própria tatuagem desfocada */
+/* PC: tríptico de coberturas de ponta a ponta, nítido, centro maior; nome por cima da base */
 @media (min-width:861px) and (min-height:521px){
   .hero{justify-content:flex-end;padding:0 var(--g) clamp(40px,6svh,64px)}
-  .quadro{position:absolute;inset:0;margin:0 auto;width:min(100%,calc(100svh * .96));height:100%;aspect-ratio:auto;background:transparent;box-shadow:none;transform:scale(1.02);transition:opacity 1.4s var(--ease),transform 2.4s var(--ease);-webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
+  .amb{display:none}
+  .quadro{position:absolute;inset:0;width:100%;height:100%;aspect-ratio:auto;background:var(--preto);box-shadow:none;transform:none;transition:opacity 1.6s var(--ease)}
   .pronto .quadro{transform:none}
-  .quadro::after{height:58%;background:linear-gradient(rgba(10,10,11,0),rgba(10,10,11,.6) 50%,var(--preto))}
-  .q-topo{padding:96px 18% 48px;background:linear-gradient(rgba(10,10,11,.85),rgba(10,10,11,.4) 60%,transparent)}
-  .amb img.on{opacity:.62}
-  .amb::after{background:radial-gradient(60% 75% at 50% 40%,rgba(10,10,11,.1),rgba(10,10,11,.78) 100%),linear-gradient(rgba(10,10,11,.55),transparent 22%,transparent 55%,var(--preto))}
+  .quadro>.q-poster{left:30%;width:40%}
+  .quadro::after{height:52%;background:linear-gradient(rgba(10,10,11,0),rgba(10,10,11,.62) 50%,var(--preto))}
+  .q-topo{left:30%;right:30%;padding:96px 18px 48px;background:linear-gradient(rgba(10,10,11,.85),rgba(10,10,11,.4) 60%,transparent)}
+  .topo:not(.solido){background:linear-gradient(rgba(10,10,11,.7),transparent)}
   .nome{margin-top:0}
-  .hero-sub{color:rgba(239,233,224,.78);text-shadow:0 2px 14px rgba(0,0,0,.8)}
+  .hero-sub{color:rgba(239,233,224,.8);text-shadow:0 2px 14px rgba(0,0,0,.8)}
 }
 
 /* seções */

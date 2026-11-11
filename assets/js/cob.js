@@ -8,7 +8,7 @@
   var FS = [
     'precision highp float;',
     'varying vec2 vv;',
-    'uniform sampler2D A,D,N;uniform vec2 c0;uniform float s,P,ar;uniform vec2 res;',
+    'uniform sampler2D A,D,N;uniform vec2 c0;uniform float s,P,ar,dim;uniform vec2 res;',
     'const vec3 LUM=vec3(.299,.587,.114);',
     'float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
     'float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
@@ -49,7 +49,7 @@
     // vinheta e grão
     ' vec2 w=v-.5; o*=1.-.32*pow(length(w*vec2(1.1,.95))*1.35,2.2);',
     ' o+=(h(v*res+fract(s)*91.)-.5)*.018;',
-    ' gl_FragColor=vec4(o,1.);}'
+    ' gl_FragColor=vec4(o*dim,1.);}'
   ].join('\n');
 
   window.cobHero = function (cv, pares, op) {
@@ -71,24 +71,47 @@
       return t;
     }
     var T = pares.map(function (p) { return [tex(p[0]), tex(p[1]), p[2] || [.5, .5]]; });
-    var U = {}; ['A', 'D', 'N', 'c0', 's', 'P', 'res', 'ar'].forEach(function (k) { U[k] = gl.getUniformLocation(pr, k); });
-    gl.uniform1i(U.A, 0); gl.uniform1i(U.D, 1); gl.uniform1i(U.N, 2); gl.uniform1f(U.P, P);
+    var U = {}; ['A', 'D', 'N', 'c0', 's', 'P', 'res', 'ar', 'dim'].forEach(function (k) { U[k] = gl.getUniformLocation(pr, k); });
+    gl.uniform1i(U.A, 0); gl.uniform1i(U.D, 1); gl.uniform1i(U.N, 2); gl.uniform1f(U.P, P); gl.uniform1f(U.dim, 1);
     var n = T.length;
     function fase(t) { var i = Math.floor(t / P) % n; return { i: i, s: t - Math.floor(t / P) * P }; }
+    function tamanho(dpr) {
+      var r = cv.getBoundingClientRect(); dpr = Math.min(dpr || 1, 2);
+      var W = Math.max(2, Math.round(r.width * dpr)), H = Math.max(2, Math.round(r.height * dpr));
+      if (op.tam) { W = op.tam[0]; H = op.tam[1]; }
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      return [W, H, dpr];
+    }
+    // um painel: cobertura i no tempo s, dentro do retângulo (x, w) em pixels
+    function painel(i, s, x, w, H, dim) {
+      gl.viewport(x, 0, w, H);
+      var c = T[i], nx = T[(i + 1) % n];
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, c[0]);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, c[1]);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, nx[0]);
+      gl.uniform2f(U.c0, c[2][0], c[2][1]); gl.uniform1f(U.s, s); gl.uniform2f(U.res, w, H);
+      gl.uniform1f(U.ar, (w / H) / .8); gl.uniform1f(U.dim, dim);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     return {
       P: P, n: n, fase: fase,
       desenha: function (t, dpr) {
-        var r = cv.getBoundingClientRect(); dpr = Math.min(dpr || 1, 2);
-        var W = Math.max(2, Math.round(r.width * dpr)), H = Math.max(2, Math.round(r.height * dpr));
-        if (op.tam) { W = op.tam[0]; H = op.tam[1]; }
-        if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-        gl.viewport(0, 0, W, H);
-        var f = fase(t), c = T[f.i], nx = T[(f.i + 1) % n];
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, c[0]);
-        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, c[1]);
-        gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, nx[0]);
-        gl.uniform2f(U.c0, c[2][0], c[2][1]); gl.uniform1f(U.s, f.s); gl.uniform2f(U.res, W, H); gl.uniform1f(U.ar, (W / H) / .8);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        var z = tamanho(dpr), f = fase(t);
+        painel(f.i, f.s, 0, z[0], z[1], 1);
+      },
+      /* tríptico do PC: centro maior cobre primeiro, laterais juntas e espelhadas logo depois.
+         Deslocamentos 0 / +2 / +3 garantem três coberturas diferentes o tempo todo. */
+      triptico: function (t, dpr, larg) {
+        var z = tamanho(dpr), W = z[0], H = z[1], g = Math.max(1, Math.round(z[2] * 1.5));
+        larg = larg || .4;
+        var lado = Math.round(W * (1 - larg) / 2);
+        gl.viewport(0, 0, W, H); gl.clearColor(.039, .039, .043, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+        var atraso = .9;
+        function f2(off, a) { var u = Math.max(t - a, 0), k = Math.floor(u / P); return { i: (k + off) % n, s: u - k * P }; }
+        var c = f2(0, 0), e = f2(2, atraso), d = f2(3, atraso);
+        painel(e.i, e.s, 0, lado - g, H, .62);
+        painel(c.i, c.s, lado + g, W - 2 * lado - 2 * g, H, 1);
+        painel(d.i, d.s, W - lado + g, lado - g, H, .62);
       }
     };
   };
