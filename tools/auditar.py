@@ -14,7 +14,7 @@ JS = """() => {
     const r = e.getBoundingClientRect(); if (!r.width) continue;
     if (r.right > W + 1 || r.left < -1) fora.push((e.className || e.tagName) + ' ' + Math.round(r.left) + '..' + Math.round(r.right));
   }
-  const eixo = ['.marca', '.quadro', '.capa-faixa', '.cn-w', '.ch-d', '.ch-e', '.hero-bts', '.cab', '.filtros', '.grade', '.mais-w .bt', '.cobs', '.passos', '.sobre-foto', '.sobre-txt h2', '.fatos', '.linha', '.deps', '.estudio-foto', '.estudios', '.form', '.envio .bt', '.rodape-s', '.rodape-w', '.links', '.rodape-pe', '.divisor svg'];
+  const eixo = ['.marca', '.gal-cena', '.gn-w', '.gal-sub', '.hero-bts', '.cab', '.filtros', '.grade', '.mais-w .bt', '.cobs', '.passos', '.sobre-foto', '.sobre-txt h2', '.fatos', '.linha', '.deps', '.estudio-foto', '.estudios', '.form', '.envio .bt', '.rodape-s', '.rodape-w', '.links', '.rodape-pe', '.divisor svg'];
   if (W < 860) for (const s of eixo) {
     for (const e of document.querySelectorAll(s)) { const r = e.getBoundingClientRect(); if (!r.width) continue;
       const d = (r.left + r.right) / 2 - W / 2; if (Math.abs(d) > 1.5) torto.push(s + ' ' + d.toFixed(1)); }

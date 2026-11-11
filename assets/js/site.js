@@ -23,81 +23,72 @@
   addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) abre(false); });
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
-  /* hero "capa de revista": cada cobertura é uma edição; a peça é coberta ao vivo */
-  var SEM = [[.5, .42], [.5, .4], [.5, .45], [.42, .72]], NOMES = ['dragao', 'cerejeira', 'pastor', 'onca'];
-  var P = 8.0, N = NOMES.length, CICLO = P * N, VIRA = 5.4, V = '?v=4';
-  var hero = $('.capa'), quadro = $('.quadro'), cobT = $('.cob-t'), COBS = window.COB || [];
-  var edN = $$('.ed-n'), fases = $$('.ch-fase span'), eds = $$('.eds li');
-  var ultI = -1, ultF = -1;
-  function reg(el) { el.classList.remove('reg'); void el.offsetWidth; el.classList.add('reg'); }
-  function marca(t) {
-    var i = Math.floor(t / P) % N, s = t - Math.floor(t / P) * P;
-    eds.forEach(function (li, j) { li.style.setProperty('--p', (j < i ? 1 : j > i ? 0 : Math.min(s / (P - .9), 1)).toFixed(4)); });
-    var f = s < 1.3 ? 0 : s < VIRA ? 1 : 2;
-    if (f !== ultF) { ultF = f; fases.forEach(function (e, j) { e.classList.toggle('on', j === f); }); }
-    if (i !== ultI) {
-      ultI = i;
-      var n = 'Nº 0' + (i + 1);
-      edN.forEach(function (e) { e.textContent = n; reg(e); });
-      eds.forEach(function (li, j) { li.classList.toggle('on', j === i); });
-      cobT.textContent = (COBS[i] || {}).t || ''; reg(cobT);
-    }
-  }
-  function estatico() {
-    $('.q-poster').src = 'assets/hero/dragao-d.webp' + V;
-    fases.forEach(function (e, j) { e.classList.toggle('on', j === 2); });
-    eds.forEach(function (li, j) { li.classList.toggle('on', j === 0); li.style.setProperty('--p', j === 0 ? 1 : 0); });
-  }
-  function iniciaGL() {
-    var cv = $('.q-gl'), carregadas = 0, imgs = [];
-    if (!window.cobHero) return false;
+  /* hero "galeria no chão": quadros largados no chão; as obras se cobrem em tinta, um quadro depois do outro */
+  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=1', INTRO = 2.4;
+  var baixa = function () { return innerHeight <= 520 && innerWidth > innerHeight; };
+  function estatico() { cena.classList.add('est'); }
+  function iniciaGL(celular) {
+    if (!window.galeria || !window.GALERIA) return false;
     var teste = document.createElement('canvas').getContext('webgl');
     if (!teste) return false;
-    NOMES.forEach(function (n, i) {
-      ['a', 'd'].forEach(function (k, j) {
-        var im = new Image(); im.decoding = 'async'; im.src = 'assets/hero/' + n + '-' + k + '.webp' + V;
-        (imgs[i] = imgs[i] || [])[j] = im;
-        im.onload = function () { if (++carregadas === N * 2) comeca(); };
-        im.onerror = function () { iniciaVideo(); };
-      });
+    var cv = $('.g-gl'), imgs = {}, faltam = 0, meta = null, G = null, falhou = false;
+    var lay = celular ? 'cel' : baixa() ? 'baixa' : 'pc';
+    var nomes = {};
+    window.GALERIA[lay].forEach(function (q) {
+      if (q.cob != null) ['dragao', 'cerejeira', 'pastor', 'onca'].forEach(function (n) { nomes[n + '-a'] = nomes[n + '-d'] = 1; });
+      else q.arts.forEach(function (n) { nomes[n] = 1; });
     });
-    var H, t0 = 0, vis = true, raf = 0;
-    function quadroGL(ts) {
-      if (!t0) t0 = ts;
-      var t = (ts - t0) / 1000;
-      H.desenha(t, devicePixelRatio || 1);
-      marca(t);
-      raf = vis ? requestAnimationFrame(quadroGL) : 0;
-    }
-    function comeca() {
-      try { H = window.cobHero(cv, imgs.map(function (p, i) { return [p[0], p[1], SEM[i]]; })); } catch (e) { H = null; }
-      if (!H) { iniciaVideo(); return; }
-      quadro.classList.add('gl');
+    function pronto() {
+      if (falhou || faltam || !meta) return;
+      var fd = celular ? [.9, 1] : lay === 'baixa' ? [.5, .9] : [.66, 1];
+      try { G = window.galeria(cv, { imgs: imgs, meta: meta, quadros: window.GALERIA[lay].map(function (q) { return Object.assign({}, q); }), fundo: fd }); } catch (e) { G = null; }
+      if (!G) { falhou = true; if (!celular) iniciaVideo(); else estatico(); return; }
+      cena.classList.add('gl');
+      var t0 = 0, vis = true, raf = 0, alvo = [0, 0], par = [0, 0], pausa = 0, tp = 0;
+      if (!celular) addEventListener('pointermove', function (e) { alvo = [(e.clientX / innerWidth - .5) * -26, (e.clientY / innerHeight - .5) * -18]; });
+      function quadro(ts) {
+        if (!t0) t0 = ts;
+        if (pausa) { t0 += ts - pausa; pausa = 0; }
+        par[0] += (alvo[0] - par[0]) * .045; par[1] += (alvo[1] - par[1]) * .045;
+        G.desenha((ts - t0) / 1000, devicePixelRatio || 1, par);
+        tp = ts;
+        raf = vis ? requestAnimationFrame(quadro) : 0;
+      }
       new IntersectionObserver(function (es) {
         vis = es[0].isIntersecting;
-        if (vis && !raf) raf = requestAnimationFrame(quadroGL);
-      }).observe(quadro);
-      raf = requestAnimationFrame(quadroGL);
+        if (!vis) pausa = tp;
+        if (vis && !raf) raf = requestAnimationFrame(quadro);
+      }).observe(cena);
+      raf = requestAnimationFrame(quadro);
     }
+    fetch('assets/galeria/galeria.json' + V).then(function (r) { return r.json(); }).then(function (j) { meta = j; pronto(); })
+      .catch(function () { meta = {}; pronto(); });
+    Object.keys(nomes).forEach(function (n) {
+      faltam++;
+      var im = new Image(); im.decoding = 'async'; im.src = 'assets/galeria/' + n + '.webp' + V; imgs[n] = im;
+      im.onload = function () { faltam--; pronto(); };
+      im.onerror = function () { if (!falhou) { falhou = true; if (!celular) iniciaVideo(); else estatico(); } };
+    });
     return true;
   }
   var videoTentado = false;
   function iniciaVideo() {
     if (videoTentado) return; videoTentado = true;
-    var v = $('.q-video');
-    v.src = 'assets/video/cobertura.mp4?v=7'; v.preload = 'auto';
+    var v = $('.g-video');
+    v.src = 'assets/video/galeria.mp4' + V; v.preload = 'auto';
     var p = v.play();
     // iPhone em modo de economia recusa o autoplay: aí o shader faz o trabalho
-    if (p && p.catch) p.catch(function () { if (!quadro.classList.contains('gl') && !iniciaGL()) estatico(); });
-    v.addEventListener('playing', function () { quadro.classList.add('vd'); hero.classList.add('vd'); }, { once: true });
-    v.addEventListener('error', function () { if (!iniciaGL()) estatico(); });
-    (function laco() { if (!v.paused && quadro.classList.contains('vd')) marca(v.currentTime % CICLO); requestAnimationFrame(laco); })();
-    document.addEventListener('visibilitychange', function () { if (!document.hidden && quadro.classList.contains('vd')) v.play().catch(function () {}); });
+    if (p && p.catch) p.catch(function () { if (!cena.classList.contains('gl') && !iniciaGL(true)) estatico(); });
+    v.addEventListener('playing', function () { cena.classList.add('vd'); }, { once: true });
+    // o vídeo abre com os quadros pousando; o laço volta para depois da entrada
+    v.addEventListener('ended', function () { v.currentTime = INTRO; v.play().catch(function () {}); });
+    v.addEventListener('error', function () { if (!iniciaGL(true)) estatico(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && cena.classList.contains('vd')) v.play().catch(function () {}); });
   }
-  marca(0);
+  var celPe = function () { return cel() && !baixa(); };
   if (reduz) estatico();
-  else if (matchMedia('(pointer: coarse)').matches || cel()) iniciaVideo();
-  else if (!iniciaGL()) iniciaVideo();
+  else if (celPe()) iniciaVideo();
+  else if (!iniciaGL(false)) iniciaVideo();
   requestAnimationFrame(function () { hero.classList.add('pronto'); });
 
   /* surgir ao rolar */
