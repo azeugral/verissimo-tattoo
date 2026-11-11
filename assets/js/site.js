@@ -24,7 +24,7 @@
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
   /* hero "galeria no chão": quadros largados no chão; as obras se cobrem em tinta, um quadro depois do outro */
-  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=2', INTRO = 2.4;
+  var hero = $('.gal'), cena = $('.gal-cena'), V = '?v=3', INTRO = 2.4;
   var baixa = function () { return innerHeight <= 520 && innerWidth > innerHeight; };
   function estatico() { cena.classList.add('est'); }
   function iniciaGL(celular) {

@@ -93,7 +93,7 @@
   function ease(x) { x = Math.min(1, Math.max(0, x)); return 1 - Math.pow(1 - x, 3); }
 
   window.galeria = function (cv, op) {
-    var gl = cv.getContext('webgl', { antialias: false, alpha: false, premultipliedAlpha: true, preserveDrawingBuffer: !!op.guardar, powerPreference: 'high-performance' });
+    var gl = cv.getContext('webgl', { antialias: false, alpha: false, stencil: true, premultipliedAlpha: true, preserveDrawingBuffer: !!op.guardar, powerPreference: 'high-performance' });
     if (!gl) return null;
     function sh(tp, src) { var o = gl.createShader(tp); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw gl.getShaderInfoLog(o); return o; }
     function prog(v, f) {
@@ -145,6 +145,10 @@
     var M = op.meta || {};
     var Z = function (k) { return M[k] || [.5, .5, 1]; };
     var Q = op.quadros.map(function (q, k) { q.k = k; return q; }).sort(function (a, b) { return a.w - b.w; });
+    Q.forEach(function (q, i) {
+      var r = q.w * .85; q.sobre = false;
+      for (var j = 0; j < i; j++) { var o = Q[j]; if (Math.hypot(q.x - o.x, q.y - o.y) < r + o.w * .85 + .06) q.sobre = true; }
+    });
 
     /* estado de um quadro no tempo t: obras A e B, tempo da troca (s<0 = parado) e modo */
     function estado(q, t) {
@@ -182,38 +186,53 @@
         else { copia(chao, W, H); quadros(t, W, H, u, 0); }
       }
     };
+    /* parte 0: quadro inteiro com sombra (entrada e cena guardada). parte 1: só as obras, por cima da cena guardada;
+       um quadro que fica por cima de outro refaz a sua sombra e a moldura apenas onde a obra de baixo acabou de ser
+       redesenhada (stencil), para a de baixo nunca atravessar a de cima */
     function quadros(t, W, H, u, parte) {
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-      Q.forEach(function (q) {
-        var e = ease((t - .15 - q.ordem * .14) / 1.35), lev = 1 - e;
-        var fw = q.w * H, est = q.est;
-        var bo = fw * (est === 0 ? .052 : est === 1 ? .046 : .02), ma = fw * (est === 0 ? .085 : est === 1 ? .06 : 0);
-        var jw = fw - 2 * (bo + ma), fh = jw * 1.25 + 2 * (bo + ma);
-        var rot = q.rot * Math.PI / 180, esc = 1 + .07 * lev;
-        var cx = W / 2 + q.x * H, cy = q.y * H - 10 * u * lev;
-        if (!parte) {
-          gl.useProgram(SO.p);
-          gl.uniform2f(SO.u.res, W, H); gl.uniform1f(SO.u.rot, rot); gl.uniform1f(SO.u.esc, esc);
-          [[(10 + 26 * lev) * u * q.w * 2.4, (14 + 30 * lev) * u * q.w * 2.4, (16 + 30 * lev) * u, .5 * e], [3 * u, 4 * u, 3 * u, .55 * e]].forEach(function (s) {
-            gl.uniform2f(SO.u.cen, cx + s[0], cy + s[1]); gl.uniform2f(SO.u.meia, fw / 2, fh / 2);
-            gl.uniform2f(SO.u.ex, s[2] * 2, s[2] * 2); gl.uniform1f(SO.u.blur, s[2]); gl.uniform1f(SO.u.forca, s[3]);
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-          });
+      if (!parte) { Q.forEach(function (q) { um(q, t, W, H, u, true, 0); }); return; }
+      gl.enable(gl.STENCIL_TEST); gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT);
+      Q.forEach(function (q, i) {
+        if (q.sobre) {
+          gl.stencilFunc(gl.EQUAL, 1, 1); gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
+          um(q, t, W, H, u, true, -1); um(q, t, W, H, u, false, 0);
         }
-        var st = estado(q, t);
-        gl.useProgram(QU.p);
-        gl.uniform2f(QU.u.res, W, H); gl.uniform2f(QU.u.cen, cx, cy); gl.uniform2f(QU.u.meia, fw / 2, fh / 2); gl.uniform2f(QU.u.ex, 0, 0);
-        gl.uniform1f(QU.u.rot, rot); gl.uniform1f(QU.u.esc, esc); gl.uniform1f(QU.u.parte, parte);
-        gl.uniform1f(QU.u.bo, bo); gl.uniform1f(QU.u.ma, ma); gl.uniform1f(QU.u.est, est); gl.uniform1f(QU.u.px, u);
-        gl.uniform1f(QU.u.alfa, Math.min(1, e * 1.6)); gl.uniform1f(QU.u.luz, ((q.k % 3) - 1) * .05);
-        gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TX[st.A]); gl.uniform1i(QU.u.A, 0);
-        gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, TX[st.B]); gl.uniform1i(QU.u.B, 1);
-        var za = Z(st.A), zb = Z(st.B);
-        gl.uniform3f(QU.u.zA, za[0], za[1], za[2]); gl.uniform3f(QU.u.zB, zb[0], zb[1], zb[2]);
-        gl.uniform2f(QU.u.c0, st.c0[0], st.c0[1]); gl.uniform1f(QU.u.s, st.s); gl.uniform1f(QU.u.modo, st.modo);
-        gl.uniform1f(QU.u.dA, st.dA); gl.uniform1f(QU.u.dB, st.dB);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        gl.stencilFunc(gl.ALWAYS, 1, 1); gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+        um(q, t, W, H, u, false, 1);
       });
+      gl.disable(gl.STENCIL_TEST);
+    }
+    function um(q, t, W, H, u, sombra, parte) {
+      var e = ease((t - .15 - q.ordem * .14) / 1.35), lev = 1 - e;
+      var fw = q.w * H, est = q.est;
+      var bo = fw * (est === 0 ? .052 : est === 1 ? .046 : .02), ma = fw * (est === 0 ? .085 : est === 1 ? .06 : 0);
+      var jw = fw - 2 * (bo + ma), fh = jw * 1.25 + 2 * (bo + ma);
+      var rot = q.rot * Math.PI / 180, esc = 1 + .07 * lev;
+      var cx = W / 2 + q.x * H, cy = q.y * H - 10 * u * lev;
+      if (sombra) {
+        gl.useProgram(SO.p);
+        gl.uniform2f(SO.u.res, W, H); gl.uniform1f(SO.u.rot, rot); gl.uniform1f(SO.u.esc, esc);
+        [[(10 + 26 * lev) * u * q.w * 2.4, (14 + 30 * lev) * u * q.w * 2.4, (16 + 30 * lev) * u, .5 * e], [3 * u, 4 * u, 3 * u, .55 * e]].forEach(function (s) {
+          gl.uniform2f(SO.u.cen, cx + s[0], cy + s[1]); gl.uniform2f(SO.u.meia, fw / 2, fh / 2);
+          gl.uniform2f(SO.u.ex, s[2] * 2, s[2] * 2); gl.uniform1f(SO.u.blur, s[2]); gl.uniform1f(SO.u.forca, s[3]);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        });
+      }
+      if (parte < 0) return;
+      var st = estado(q, t);
+      gl.useProgram(QU.p);
+      gl.uniform2f(QU.u.res, W, H); gl.uniform2f(QU.u.cen, cx, cy); gl.uniform2f(QU.u.meia, fw / 2, fh / 2); gl.uniform2f(QU.u.ex, 0, 0);
+      gl.uniform1f(QU.u.rot, rot); gl.uniform1f(QU.u.esc, esc); gl.uniform1f(QU.u.parte, parte);
+      gl.uniform1f(QU.u.bo, bo); gl.uniform1f(QU.u.ma, ma); gl.uniform1f(QU.u.est, est); gl.uniform1f(QU.u.px, u);
+      gl.uniform1f(QU.u.alfa, Math.min(1, e * 1.6)); gl.uniform1f(QU.u.luz, ((q.k % 3) - 1) * .05);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TX[st.A]); gl.uniform1i(QU.u.A, 0);
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, TX[st.B]); gl.uniform1i(QU.u.B, 1);
+      var za = Z(st.A), zb = Z(st.B);
+      gl.uniform3f(QU.u.zA, za[0], za[1], za[2]); gl.uniform3f(QU.u.zB, zb[0], zb[1], zb[2]);
+      gl.uniform2f(QU.u.c0, st.c0[0], st.c0[1]); gl.uniform1f(QU.u.s, st.s); gl.uniform1f(QU.u.modo, st.modo);
+      gl.uniform1f(QU.u.dA, st.dA); gl.uniform1f(QU.u.dB, st.dB);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
   };
   /* composições: x em alturas a partir do centro, y em alturas a partir do topo, w = largura do quadro em alturas */
