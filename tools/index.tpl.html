@@ -16,7 +16,9 @@
 <meta property="og:description" content="Realismo colorido, preto e cinza e coberturas. Maringá e Goiânia.">
 <meta property="og:image" content="https://azeugral.github.io/verissimo-tattoo/assets/img/capa.jpg">
 <meta property="og:url" content="https://azeugral.github.io/verissimo-tattoo/">
+<link rel="preload" href="assets/fonts/antonio.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/lexend-exa.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/hero/dragao-a.webp" as="image">
 <link rel="preload" href="assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/site.css">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"TattooParlor","name":"Veríssimo Tattoo Artist","founder":"Alexandre Veríssimo","telephone":"+55 44 99176-1485","sameAs":["https://www.instagram.com/verissimotattoo/"],"location":[{"@type":"Place","name":"Estúdio Maringá","address":{"@type":"PostalAddress","streetAddress":"Av. Anchieta, 22, Zona 02","addressLocality":"Maringá","addressRegion":"PR","postalCode":"87013-040","addressCountry":"BR"}},{"@type":"Place","name":"Estúdio Goiânia","address":{"@type":"PostalAddress","streetAddress":"Alameda Ricardo Paranhos, 881, Setor Marista","addressLocality":"Goiânia","addressRegion":"GO","postalCode":"74175-020","addressCountry":"BR"}}]}</script>
@@ -56,45 +58,30 @@
 <main id="conteudo">
 
 <section class="hero" id="inicio">
-  <div class="palco">
-    <div class="lado lado-e" data-lado="pc">
-      <span class="lado-t">Preto e cinza</span>
-      <span class="lado-s">Luz, sombra e valores</span>
-    </div>
-    <div class="lente" aria-label="Tatuagens de Veríssimo passando do preto e cinza para a cor">
-      <img class="lente-poster" src="assets/img/hero-poster.webp" alt="" width="1080" height="1080">
-      <video class="lente-video" muted playsinline loop preload="none" poster="assets/img/hero-poster.webp" aria-hidden="true"></video>
-      <canvas class="lente-gl" aria-hidden="true"></canvas>
-      <svg class="aro" viewBox="0 0 100 100" aria-hidden="true">
-        <circle class="aro-fio" cx="50" cy="50" r="49.5"/>
-        <circle class="aro-cor" cx="50" cy="50" r="49.5" pathLength="100"/>
-      </svg>
-    </div>
-    <div class="lado lado-d" data-lado="cor">
-      <span class="lado-t">Colorido</span>
-      <span class="lado-s">A cor sobre a base</span>
+  <div class="amb" aria-hidden="true">
+    <img src="assets/hero/dragao-amb.webp" alt="" class="on"><img src="assets/hero/arara-amb.webp" alt=""><img src="assets/hero/cerejeira-amb.webp" alt=""><img src="assets/hero/pastor-amb.webp" alt="">
+  </div>
+  <div class="quadro" role="img" aria-label="Coberturas de Veríssimo: a tatuagem antiga dá lugar ao trabalho novo, primeiro em preto e cinza, depois em cor">
+    <img class="q-poster" src="assets/hero/dragao-a.webp" alt="" width="1080" height="1350">
+    <video class="q-video" muted playsinline loop preload="none" poster="assets/hero/dragao-a.webp" aria-hidden="true"></video>
+    <canvas class="q-gl" aria-hidden="true"></canvas>
+    <div class="q-topo" aria-hidden="true">
+      <div class="q-barras"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+      <p class="q-rot"><span class="q-fase">Antes</span><span class="q-t">Dragão antigo virou dragão oriental</span></p>
     </div>
   </div>
-  <p class="peca" aria-live="off"><span class="peca-t">Leão em chamas</span></p>
-  <h1 class="nome"><span class="nome-w">Veríssimo</span><span class="nome-s">Tattoo Artist</span></h1>
-  <p class="hero-sub">Realismo colorido, preto e cinza e coberturas<span class="sep" aria-hidden="true"></span>Maringá e Goiânia</p>
+  <h1 class="nome"><span class="nome-w">Veríssimo</span><span class="nome-s">Tattoo Artist desde 1994</span></h1>
+  <p class="hero-sub">Realismo e coberturas<span class="sep" aria-hidden="true"></span>Maringá e Goiânia</p>
   <div class="hero-bts">
     <a class="bt bt-cor" href="#orcamento">Pedir orçamento</a>
     <a class="bt bt-fio" href="#trabalhos">Ver trabalhos</a>
   </div>
 </section>
 
-<section class="numeros" aria-label="Números">
-  <div class="num rev"><b data-n="30" data-pre="" data-pos="+">30+</b><span>anos de tatuagem</span></div>
-  <div class="num rev"><b data-n="75" data-pre="+" data-pos="">+75</b><span>prêmios em convenções</span></div>
-  <div class="num rev"><b data-n="100" data-pre="" data-pos=" mil">100 mil</b><span>seguidores no Instagram</span></div>
-  <div class="num rev"><b>Jurado</b><span>da Tattoo Week</span></div>
-</section>
-
 <section class="secao" id="trabalhos">
   <div class="cab rev">
     <span class="chapeu">Portfólio</span>
-    <h2>Trabalhos recentes</h2>
+    <h2><span>Trabalhos recentes</span></h2>
     <p>Realismo colorido e preto e cinza feitos nos estúdios de Maringá e Goiânia. Toque em uma foto para ampliar.</p>
   </div>
   <div class="filtros rev" role="group" aria-label="Filtrar trabalhos">
@@ -111,8 +98,8 @@
 
 <section class="secao" id="coberturas">
   <div class="cab rev">
-    <span class="chapeu">Antes e depois</span>
-    <h2>Coberturas</h2>
+    <span class="chapeu">Coberturas</span>
+    <h2><span>Antes e depois</span></h2>
     <p>Tatuagens antigas que deram lugar a um projeto novo. Na cobertura, o desenho nasce em cima do que já está na pele, por isso cada caso começa com uma avaliação por foto.</p>
   </div>
   <ul class="cobs" id="cobs"></ul>
@@ -121,7 +108,7 @@
 <section class="secao secao-escura" id="metodo">
   <div class="cab rev">
     <span class="chapeu">Como funciona</span>
-    <h2>Do projeto à revisão</h2>
+    <h2><span>Do projeto à revisão</span></h2>
     <p>O cuidado não termina quando a máquina desliga. Toda tatuagem passa por quatro etapas.</p>
   </div>
   <ol class="passos">
@@ -134,15 +121,21 @@
 
 <section class="secao" id="sobre">
   <div class="sobre">
-    <figure class="sobre-foto rev">
-      <img src="assets/img/verissimo.webp" alt="Alexandre Veríssimo de braços cruzados, sorrindo, de camiseta preta" width="560" height="700" loading="lazy">
+    <figure class="sobre-foto revela">
+      <img src="assets/img/verissimo.webp" alt="Alexandre Veríssimo tatuando, de óculos e camisa polo preta com o símbolo do estúdio" width="864" height="1080" loading="lazy">
     </figure>
     <div class="sobre-txt rev">
       <span class="chapeu">O artista</span>
-      <h2>Alexandre Veríssimo</h2>
+      <h2><span>Alexandre Veríssimo</span></h2>
       <p>Tatuador desde 1994, começou em Brasília e hoje divide a agenda entre os estúdios de Maringá (PR) e Goiânia (GO). O trabalho é realismo: colorido, preto e cinza e coberturas de tatuagens antigas.</p>
       <p>Com mais de 30 anos de profissão, passou a avaliar outros artistas como jurado da Tattoo Week, a maior convenção de tatuagem do mundo, e hoje integra a Mast Pro Team Brasil e o Tattoo Clube Brasil.</p>
       <blockquote>“Seguimos levando a arte sempre a sério.”</blockquote>
+      <dl class="fatos">
+        <div><dt>30+</dt><dd>anos de tatuagem</dd></div>
+        <div><dt>+75</dt><dd>prêmios em convenções</dd></div>
+        <div><dt>Júri</dt><dd>da Tattoo Week</dd></div>
+        <div><dt>100 mil</dt><dd>seguidores no Instagram</dd></div>
+      </dl>
     </div>
   </div>
   <ol class="linha" aria-label="Trajetória">
@@ -158,7 +151,7 @@
 <section class="secao secao-escura" id="depoimentos">
   <div class="cab rev">
     <span class="chapeu">Avaliações no Google</span>
-    <h2>Quem já tatuou</h2>
+    <h2><span>Quem já tatuou</span></h2>
   </div>
   <div class="deps">
     <figure class="dep rev"><blockquote>Tatuador excepcional, entende a ideia como se estivesse lendo sua mente. Atenção e detalhes impressionantes.</blockquote><figcaption>Marcelo J.</figcaption></figure>
@@ -169,11 +162,11 @@
 
 <section class="secao" id="estudios">
   <div class="cab rev">
-    <span class="chapeu">Onde tatuar</span>
-    <h2>Dois estúdios</h2>
+    <span class="chapeu">Dois estúdios</span>
+    <h2><span>Maringá e Goiânia</span></h2>
     <p>Atendimento com horário marcado. Escolha a cidade na hora de pedir o orçamento.</p>
   </div>
-  <figure class="estudio-foto rev"><img src="assets/img/estudio.webp" alt="Interior do estúdio, com luz âmbar, piso xadrez e uma sessão em andamento" width="1440" height="1350" loading="lazy"></figure>
+  <figure class="estudio-foto revela"><img src="assets/img/estudio.webp" alt="Interior do estúdio, com luz âmbar, piso xadrez e uma sessão em andamento" width="1440" height="1350" loading="lazy"></figure>
   <div class="estudios">
     <article class="estudio rev">
       <h3>Maringá</h3>
@@ -191,7 +184,7 @@
 <section class="secao secao-escura" id="orcamento">
   <div class="cab rev">
     <span class="chapeu">Agenda</span>
-    <h2>Pedir orçamento</h2>
+    <h2><span>Pedir orçamento</span></h2>
     <p>Preencha e a mensagem sai pronta no WhatsApp. Mande também fotos do local e de referências por lá.</p>
   </div>
   <form class="form rev" id="form" novalidate>
@@ -240,7 +233,7 @@
 </div>
 
 <script src="assets/js/dados.js"></script>
-<script src="assets/js/hero.js"></script>
+<script src="assets/js/cob.js"></script>
 <script src="assets/js/site.js"></script>
 </body>
 </html>

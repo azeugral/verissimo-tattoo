@@ -64,18 +64,9 @@ for slug, a, b, tit, fa, fb in PARES:
     salva(crop45(Image.open(src(b)).convert('RGB'), fy=fb), f'cob/{slug}-depois.webp', 720)
     pares.append({'s': slug, 't': tit})
 
-# retrato (post de dicas: ele fica na metade esquerda) e estudio
-r = Image.open(src('98.0')).convert('RGB'); r = r.crop((0, 300, 560, 1000)); salva(r, 'veríssimo.webp'.replace('í', 'i'), 560)
+# retrato: foto de perfil atual do Instagram (ele tatuando), 4:5
+r = Image.open(R / 'perfil-1080.jpg').convert('RGB'); r = r.crop((108, 0, 972, 1080)); salva(r, 'verissimo.webp', 864)
 e = Image.open(src('103.1')).convert('RGB'); salva(e.crop((0, 225, 1440, 1575)), 'estudio.webp', 1440)
-
-# hero: quadrados (cx, cy, lado) em px da foto original
-HERO = [('leao', '3.0', 660, 1075, 1290), ('olho', '61.1', 700, 1135, 1060),
-        ('dragao', '86.0', 720, 860, 1180), ('itachi', '105.0', 700, 820, 1240)]
-(S / 'assets/hero').mkdir(exist_ok=True)
-for nome, k, cx, cy, l in HERO:
-    im = Image.open(src(k)).convert('RGB')
-    q = im.crop((cx - l // 2, cy - l // 2, cx + l // 2, cy + l // 2)).resize((1024, 1024), Image.LANCZOS)
-    q.save(S / f'assets/hero/{nome}.webp', 'WEBP', quality=88, method=6)
 
 (S / 'assets/js/dados.js').parent.mkdir(parents=True, exist_ok=True)
 (S / 'assets/js/dados.js').write_text('window.TRAB=' + json.dumps(dados, ensure_ascii=False) + ';window.COB=' + json.dumps(pares, ensure_ascii=False) + ';', encoding='utf8')

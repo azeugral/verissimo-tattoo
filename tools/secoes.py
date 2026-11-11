@@ -11,13 +11,13 @@ with sync_playwright() as p:
     m = w < 860
     g = b.new_page(viewport={'width': w, 'height': h}, is_mobile=m, has_touch=m, device_scale_factor=1)
     g.goto('http://127.0.0.1:8765/', wait_until='load')
-    g.evaluate("document.querySelectorAll('.rev,.card').forEach(e=>e.classList.add('vis'));document.querySelectorAll('img').forEach(i=>i.loading='eager')")
+    g.evaluate("document.querySelectorAll('.rev,.card,.revela,.passos').forEach(e=>e.classList.add('vis'));document.querySelectorAll('img').forEach(i=>i.loading='eager')")
     g.wait_for_timeout(2500)
     ims = []
-    for s in ['.numeros', '#trabalhos', '#coberturas', '#metodo', '#sobre', '#depoimentos', '#estudios', '#orcamento', '.rodape']:
+    for s in ['#trabalhos', '#coberturas', '#metodo', '#sobre', '#depoimentos', '#estudios', '#orcamento', '.rodape']:
         f = O / f'sec-{w}-{s.strip(".#")}.png'; g.locator(s).screenshot(path=str(f)); ims.append(Image.open(f))
     # monta em colunas
-    cols = 5 if m else 2; esc = 1 if m else .5
+    cols = 4 if m else 2; esc = 1 if m else .5
     ims = [i.resize((int(i.width * esc), int(i.height * esc))) for i in ims]
     linhas = [ims[k:k + cols] for k in range(0, len(ims), cols)]
     W = max(sum(i.width for i in l) for l in linhas) + 10 * cols

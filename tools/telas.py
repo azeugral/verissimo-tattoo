@@ -15,7 +15,7 @@ with sync_playwright() as p:
         g.goto(URL, wait_until='load'); g.wait_for_timeout(3600)
         g.screenshot(path=str(O / f'hero-{w}x{h}.png'))
         if (w, h) in [(1440, 900), (390, 844)]:
-            g.evaluate("document.querySelectorAll('.rev,.card').forEach(e=>e.classList.add('vis'))")
+            g.evaluate("document.querySelectorAll('.rev,.card,.revela,.passos').forEach(e=>e.classList.add('vis'))")
             g.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i=>i.loading='eager')")
             g.wait_for_timeout(1500)
             g.screenshot(path=str(O / f'pagina-{w}.png'), full_page=True)
