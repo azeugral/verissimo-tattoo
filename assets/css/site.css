@@ -87,7 +87,8 @@ p{margin:0}
 .nome-w{display:block;font:600 var(--nome)/1 var(--cond);letter-spacing:.015em;padding-left:.015em;text-transform:uppercase;color:var(--marfim);text-shadow:0 10px 40px rgba(0,0,0,.55);clip-path:inset(0 0 100% 0);transform:translateY(.25em);transition:clip-path 1.2s var(--ease),transform 1.2s var(--ease)}
 .pronto .nome-w{clip-path:inset(-45% -8% -20% -8%);transform:none;transition-delay:.35s}
 .nome-s{font:400 11px/1 var(--tit);letter-spacing:.42em;text-transform:uppercase;padding-left:.42em;color:var(--cinza)}
-.hero-sub{margin-top:20px;color:var(--cinza);font-size:16px}
+.hero-sub{position:relative;z-index:3;margin-top:20px;color:var(--cinza);font-size:16px}
+.hero-bts{position:relative;z-index:3}
 .sep{display:inline-block;width:4px;height:4px;background:var(--neon);margin:0 14px;vertical-align:middle;transform:translateY(-1px) rotate(45deg)}
 .hero-bts{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .hero-bts .bt{min-width:220px}
@@ -95,6 +96,19 @@ p{margin:0}
 .pronto.hero .nome-s{opacity:1;transform:none;transition-delay:.6s}
 .pronto.hero .hero-sub{opacity:1;transform:none;transition-delay:.7s}
 .pronto.hero .hero-bts{opacity:1;transform:none;transition-delay:.82s}
+
+/* PC: a cobertura ocupa a altura toda; as laterais se dissolvem na própria tatuagem desfocada */
+@media (min-width:861px) and (min-height:521px){
+  .hero{justify-content:flex-end;padding:0 var(--g) clamp(40px,6svh,64px)}
+  .quadro{position:absolute;inset:0;margin:0 auto;width:min(100%,calc(100svh * .96));height:100%;aspect-ratio:auto;background:transparent;box-shadow:none;transform:scale(1.02);transition:opacity 1.4s var(--ease),transform 2.4s var(--ease);-webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
+  .pronto .quadro{transform:none}
+  .quadro::after{height:58%;background:linear-gradient(rgba(10,10,11,0),rgba(10,10,11,.6) 50%,var(--preto))}
+  .q-topo{padding:96px 18% 48px;background:linear-gradient(rgba(10,10,11,.85),rgba(10,10,11,.4) 60%,transparent)}
+  .amb img.on{opacity:.62}
+  .amb::after{background:radial-gradient(60% 75% at 50% 40%,rgba(10,10,11,.1),rgba(10,10,11,.78) 100%),linear-gradient(rgba(10,10,11,.55),transparent 22%,transparent 55%,var(--preto))}
+  .nome{margin-top:0}
+  .hero-sub{color:rgba(239,233,224,.78);text-shadow:0 2px 14px rgba(0,0,0,.8)}
+}
 
 /* seções */
 .secao{position:relative;padding:clamp(80px,11vw,140px) var(--g)}

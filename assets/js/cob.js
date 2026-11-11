@@ -18,7 +18,7 @@
     'vec3 cinza(vec3 c){float l=dot(c,LUM);l=smoothstep(-.02,1.03,l);l=pow(l,1.1);return vec3(l)*vec3(1.,.985,.96);}',
     'vec3 tx(sampler2D T,vec2 u,float z){return texture2D(T,(u-.5)/z+.5).rgb;}',
     'void main(){',
-    ' vec2 v=vv-.5; if(ar<1.) v.x*=ar; else v.y/=ar; v+=.5;',
+    ' vec2 v=vv-.5; if(ar<1.){ v.x*=ar; v+=.5; } else { v.y/=ar; v.x+=.5; v.y+=clamp(c0.y,.5/ar,1.-.5/ar); }',
     ' float z=1.05-.05*ease(s/P);',
     ' vec3 a=tx(A,v,z), d=tx(D,v,z);',
     ' vec3 an=mix(a,vec3(dot(a,LUM)),.3)*.92;',
