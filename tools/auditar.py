@@ -3,7 +3,7 @@
 Uso: python tools/auditar.py [url]"""
 import sys
 from playwright.sync_api import sync_playwright
-URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8765/'
+URL = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8767/'
 TAM = [(320, 640), (360, 740), (375, 812), (390, 844), (414, 896), (430, 932), (768, 1024), (820, 1180), (844, 390), (1024, 768), (1280, 800), (1440, 900), (1920, 1080)]
 JS = """() => {
   document.querySelectorAll('.rev,.card,.revela,.passos').forEach(e => e.classList.add('vis'));
@@ -14,7 +14,7 @@ JS = """() => {
     const r = e.getBoundingClientRect(); if (!r.width) continue;
     if (r.right > W + 1 || r.left < -1) fora.push((e.className || e.tagName) + ' ' + Math.round(r.left) + '..' + Math.round(r.right));
   }
-  const eixo = ['.marca', '.quadro', '.q-rot', '.nome-w', '.nome-s', '.hero-sub', '.hero-bts', '.cab', '.filtros', '.grade', '.mais-w .bt', '.cobs', '.passos', '.sobre-foto', '.sobre-txt h2', '.fatos', '.linha', '.deps', '.estudio-foto', '.estudios', '.form', '.envio .bt', '.rodape-s', '.rodape-w', '.links', '.rodape-pe', '.divisor svg'];
+  const eixo = ['.marca', '.quadro', '.capa-faixa', '.cn-w', '.ch-d', '.ch-e', '.hero-bts', '.cab', '.filtros', '.grade', '.mais-w .bt', '.cobs', '.passos', '.sobre-foto', '.sobre-txt h2', '.fatos', '.linha', '.deps', '.estudio-foto', '.estudios', '.form', '.envio .bt', '.rodape-s', '.rodape-w', '.links', '.rodape-pe', '.divisor svg'];
   if (W < 860) for (const s of eixo) {
     for (const e of document.querySelectorAll(s)) { const r = e.getBoundingClientRect(); if (!r.width) continue;
       const d = (r.left + r.right) / 2 - W / 2; if (Math.abs(d) > 1.5) torto.push(s + ' ' + d.toFixed(1)); }
