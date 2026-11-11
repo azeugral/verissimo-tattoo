@@ -24,7 +24,7 @@
   addEventListener('resize', function () { if (!cel() && !menu.hidden) abre(false); });
 
   /* hero: cobertura ao vivo */
-  var SEM = [[.5, .42], [.42, .72], [.5, .4], [.5, .45]], NOMES = ['dragao', 'onca', 'cerejeira', 'pastor'];
+  var SEM = [[.5, .42], [.5, .4], [.5, .45], [.42, .72]], NOMES = ['dragao', 'cerejeira', 'pastor', 'onca'];
   var P = 8.0, N = NOMES.length, CICLO = P * N, VIRA = 5.4;
   var hero = $('.hero'), quadro = $('.quadro'), fase = $('.q-fase'), qt = $('.q-t');
   var barras = $$('.q-barras b'), amb = $$('.amb img'), COBS = window.COB || [];
@@ -81,7 +81,7 @@
   function iniciaVideo() {
     if (videoTentado) return; videoTentado = true;
     var v = $('.q-video');
-    v.src = 'assets/video/cobertura.mp4?v=3'; v.preload = 'auto';
+    v.src = 'assets/video/cobertura.mp4?v=5'; v.preload = 'auto';
     var p = v.play();
     // iPhone em modo de economia recusa o autoplay: aí o shader faz o trabalho
     if (p && p.catch) p.catch(function () { if (!quadro.classList.contains('gl') && !iniciaGL()) estatico(); });
